@@ -12,7 +12,6 @@ import {
   Gauge, // For progress
   Calendar, // For weeks
   Sparkles, // For points
-  Star, // Another option for points/rank
   Award, // For rank
   CheckCircle, // For completed tasks
   DollarSign, // For rewards cost
@@ -364,14 +363,11 @@ export default function Home() {
         if (task.id === id) {
           if (task.type === "daily-check-in") {
             if (!task.completed) {
-              // Only allow checking in if not already completed
-              return { ...task, completed: true };
+              return { ...task, completed: true } as Task; // <-- ADD 'as Task' here
             }
           } else if (task.type === "regular") {
-            // For regular tasks, "toggle" means submitting if not submitted
             if (!task.status) {
-              // Simulate submission (set to pending)
-              return { ...task, status: "pending" };
+              return { ...task, status: "pending" } as Task; // <-- ADD 'as Task' here
             }
           }
         }
@@ -398,16 +394,13 @@ export default function Home() {
           setUserData((currentData) => {
             const updatedTasksAfterApproval = currentData.tasks.map((task) => {
               if (task.id === id && task.status === "pending") {
-                // Randomly approve or reject for demo
                 const isApproved = Math.random() > 0.3; // 70% chance to approve
-                let pointsToAdd = 0;
                 if (isApproved) {
-                  pointsToAdd = task.points;
                 }
                 return {
                   ...task,
                   status: isApproved ? "approved" : "rejected",
-                };
+                } as Task; // <-- ADD 'as Task' here
               }
               return task;
             });
