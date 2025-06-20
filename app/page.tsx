@@ -76,7 +76,7 @@ const HomeSection = ({ userData }: { userData: typeof mockUserData }) => (
     <Card className="shadow-lg rounded-xl border border-gray-100 transition-transform duration-200 hover:scale-[1.01]">
       <CardHeader className="pb-3">
         <CardTitle className="text-xl sm:text-2xl font-semibold text-gray-800">
-          This Week's Snapshot
+          This Week&apos;s Snapshot
         </CardTitle>
       </CardHeader>
       <CardContent className="grid grid-cols-3 gap-4 text-center">
