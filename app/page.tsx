@@ -1,13 +1,24 @@
 "use client";
 
 import { useState } from "react";
-// Import Lucide Icons
+import { cn } from "@/lib/utils"; // <--- Add this line!
+// Import additional Lucide Icons for more meaning
 import {
   Settings,
   Home as HomeIcon,
   ClipboardCheck,
   Trophy,
   Gift,
+  Gauge, // For progress
+  Calendar, // For weeks
+  Sparkles, // For points
+  Star, // Another option for points/rank
+  Award, // For rank
+  CheckCircle, // For completed tasks
+  DollarSign, // For rewards cost
+  Coins, // Another option for points
+  Loader2, // For loading spinner (pending approval)
+  XCircle, // For rejected tasks
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -23,7 +34,7 @@ import {
 } from "@/components/ui/dialog";
 import { mockUserData, Task, Reward } from "@/lib/data";
 
-// --- Components for different sections (These remain the same) ---
+// --- Components for different sections ---
 
 const HomeSection = ({ userData }: { userData: typeof mockUserData }) => (
   <div className="p-4 sm:p-6 md:p-8">
@@ -41,44 +52,58 @@ const HomeSection = ({ userData }: { userData: typeof mockUserData }) => (
       </Button>
     </div>
 
-    <Card className="mb-6 shadow-md rounded-lg">
-      <CardHeader className="pb-3">
-        <CardTitle className="text-xl sm:text-2xl font-semibold">
-          Progress ({userData.progress}%)
+    {/* Progress Card - Enhanced with Icon */}
+    <Card className="mb-6 shadow-lg rounded-xl border border-gray-100 transition-transform duration-200 hover:scale-[1.01]">
+      <CardHeader className="flex flex-row items-center justify-between pb-3 space-y-0">
+        <CardTitle className="text-xl sm:text-2xl font-semibold text-gray-800 flex items-center">
+          <Gauge className="w-6 h-6 mr-2 text-blue-500" />
+          Progress
         </CardTitle>
+        <span className="text-xl font-bold text-blue-600">
+          {userData.progress}%
+        </span>
       </CardHeader>
       <CardContent>
         <Progress
           value={userData.progress}
-          className="w-full h-3 bg-gray-200"
+          className="w-full h-3 bg-blue-100"
+          indicatorClassName="bg-blue-500"
         />
+        <p className="text-sm text-gray-500 mt-2">Keep up the great work!</p>
       </CardContent>
     </Card>
 
-    <Card className="shadow-md rounded-lg">
+    {/* This Week Card - Enhanced with Icons and clearer layout */}
+    <Card className="shadow-lg rounded-xl border border-gray-100 transition-transform duration-200 hover:scale-[1.01]">
       <CardHeader className="pb-3">
-        <CardTitle className="text-xl sm:text-2xl font-semibold">
-          This Week
+        <CardTitle className="text-xl sm:text-2xl font-semibold text-gray-800">
+          This Week's Snapshot
         </CardTitle>
       </CardHeader>
       <CardContent className="grid grid-cols-3 gap-4 text-center">
-        <div>
-          <p className="text-2xl sm:text-3xl font-bold text-blue-600">
+        {/* Weeks */}
+        <div className="flex flex-col items-center p-3 bg-blue-50 rounded-lg">
+          <Calendar className="w-8 h-8 text-blue-600 mb-2" />
+          <p className="text-2xl sm:text-3xl font-bold text-blue-700">
             {userData.weeks}
           </p>
-          <p className="text-sm text-gray-500">Weeks</p>
+          <p className="text-sm text-gray-600">Weeks</p>
         </div>
-        <div>
-          <p className="text-2xl sm:text-3xl font-bold text-green-600">
+        {/* Points */}
+        <div className="flex flex-col items-center p-3 bg-green-50 rounded-lg">
+          <Sparkles className="w-8 h-8 text-green-600 mb-2" />
+          <p className="text-2xl sm:text-3xl font-bold text-green-700">
             {userData.totalPoints}
           </p>
-          <p className="text-sm text-gray-500">Points</p>
+          <p className="text-sm text-gray-600">Points</p>
         </div>
-        <div>
-          <p className="text-2xl sm:text-3xl font-bold text-purple-600">
+        {/* Rank */}
+        <div className="flex flex-col items-center p-3 bg-purple-50 rounded-lg">
+          <Award className="w-8 h-8 text-purple-600 mb-2" />
+          <p className="text-2xl sm:text-3xl font-bold text-purple-700">
             {userData.rank}
           </p>
-          <p className="text-sm text-gray-500">Rank</p>
+          <p className="text-sm text-gray-600">Rank</p>
         </div>
       </CardContent>
     </Card>
@@ -90,76 +115,177 @@ const TasksSection = ({
   onToggleTask,
 }: {
   tasks: Task[];
-  onToggleTask: (id: string) => void;
-}) => (
-  <div className="p-4 sm:p-6 md:p-8">
-    <h2 className="text-2xl sm:text-3xl font-bold mb-6 text-gray-800">Tasks</h2>
-    <div className="space-y-4">
-      {tasks.map((task) => (
-        <Card
-          key={task.id}
-          className="flex items-center justify-between p-4 shadow-sm rounded-lg"
-        >
-          <label
-            htmlFor={`task-${task.id}`}
-            className="flex items-center space-x-3 cursor-pointer flex-grow"
+  onToggleTask: (id: string, type: "daily-check-in" | "regular") => void;
+}) => {
+  const [dailyCheckInEffect, setDailyCheckInEffect] = useState(false);
+
+  const handleDailyCheckIn = (task: Task) => {
+    if (!task.completed) {
+      setDailyCheckInEffect(true);
+      onToggleTask(task.id, "daily-check-in"); // This will update completed state and points
+      setTimeout(() => {
+        setDailyCheckInEffect(false); // Reset effect after a short delay
+      }, 500); // Effect duration
+    }
+  };
+
+  const handleSubmitRegularTask = (task: Task) => {
+    if (!task.status) {
+      // Only if not already submitted
+      onToggleTask(task.id, "regular"); // This will set status to 'pending'
+    }
+  };
+
+  return (
+    <div className="p-4 sm:p-6 md:p-8">
+      <h2 className="text-2xl sm:text-3xl font-bold mb-6 text-gray-800">
+        Your Tasks
+      </h2>
+      <div className="space-y-4">
+        {tasks.map((task) => (
+          <Card
+            key={task.id}
+            className={cn(
+              "flex items-center justify-between p-4 shadow-sm rounded-lg border transition-all duration-200",
+              task.type === "daily-check-in" &&
+                dailyCheckInEffect &&
+                task.completed
+                ? "border-green-500 bg-green-50 shadow-lg"
+                : "border-gray-100 hover:shadow-md",
+              task.type === "regular" && task.status === "approved"
+                ? "border-green-500 bg-green-50"
+                : "",
+              task.type === "regular" && task.status === "rejected"
+                ? "border-red-500 bg-red-50"
+                : "",
+              task.type === "regular" && task.status === "pending"
+                ? "border-blue-300 bg-blue-50"
+                : ""
+            )}
           >
-            <Checkbox
-              id={`task-${task.id}`}
-              checked={task.completed}
-              onCheckedChange={() => onToggleTask(task.id)}
-              className="w-5 h-5"
-            />
-            <span
-              className={`text-base sm:text-lg font-medium ${
-                task.completed ? "line-through text-gray-400" : "text-gray-700"
-              }`}
-            >
-              {task.name}
-            </span>
-          </label>
-          <span className="text-sm sm:text-base text-blue-600 font-semibold">
-            {task.points} P
-          </span>
-        </Card>
-      ))}
+            <div className="flex items-center space-x-3 flex-grow">
+              {task.type === "daily-check-in" ? (
+                <>
+                  <Checkbox
+                    id={`task-${task.id}`}
+                    checked={task.completed}
+                    onCheckedChange={() => handleDailyCheckIn(task)}
+                    disabled={task.completed} // Cannot uncheck
+                    className="w-5 h-5 border-2 data-[state=checked]:bg-blue-500 data-[state=checked]:text-white"
+                  />
+                  <span
+                    className={`text-base sm:text-lg font-medium flex items-center ${
+                      task.completed
+                        ? "line-through text-gray-500"
+                        : "text-gray-700"
+                    }`}
+                  >
+                    {task.completed ? (
+                      <CheckCircle className="w-5 h-5 mr-2 text-green-500" />
+                    ) : (
+                      <ClipboardCheck className="w-5 h-5 mr-2 text-gray-500" />
+                    )}
+                    {task.name}
+                  </span>
+                </>
+              ) : (
+                // Regular Task
+                <>
+                  <span
+                    className={`text-base sm:text-lg font-medium flex items-center ${
+                      task.status ? "text-gray-500" : "text-gray-700"
+                    }`}
+                  >
+                    {task.status === "approved" && (
+                      <CheckCircle className="w-5 h-5 mr-2 text-green-500" />
+                    )}
+                    {task.status === "rejected" && (
+                      <XCircle className="w-5 h-5 mr-2 text-red-500" />
+                    )}
+                    {task.status === "pending" && (
+                      <Loader2 className="w-5 h-5 mr-2 text-blue-500 animate-spin" />
+                    )}
+                    {!task.status && (
+                      <ClipboardCheck className="w-5 h-5 mr-2 text-gray-500" />
+                    )}
+                    {task.name}
+                  </span>
+                </>
+              )}
+            </div>
+            <div className="flex items-center space-x-2">
+              <span className="text-sm sm:text-base text-blue-600 font-semibold">
+                {task.points} Pts
+              </span>
+              {task.type === "regular" && !task.status && (
+                <Button
+                  size="sm"
+                  onClick={() => handleSubmitRegularTask(task)}
+                  className="bg-blue-500 hover:bg-blue-600 text-white rounded-md"
+                >
+                  Submit
+                </Button>
+              )}
+              {task.type === "regular" && task.status === "pending" && (
+                <span className="text-sm text-blue-500 font-medium">
+                  Pending...
+                </span>
+              )}
+              {task.type === "regular" && task.status === "approved" && (
+                <span className="text-sm text-green-600 font-medium">
+                  Approved
+                </span>
+              )}
+              {task.type === "regular" && task.status === "rejected" && (
+                <span className="text-sm text-red-600 font-medium">
+                  Rejected
+                </span>
+              )}
+            </div>
+          </Card>
+        ))}
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 const RankPromotionSection = ({ rank }: { rank: string }) => (
-  <div className="p-4 sm:p-6 md:p-8 flex flex-col items-center justify-center min-h-[calc(100vh-120px)]">
+  <div className="p-4 sm:p-6 md:p-8 flex flex-col items-center justify-center min-h-[calc(100vh-120px)] bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg">
     <h2 className="text-2xl sm:text-3xl font-bold mb-8 text-gray-800">
-      Rank Promotion
+      Rank Progression
     </h2>
-    <div className="w-40 h-40 sm:w-48 sm:h-48 flex items-center justify-center bg-gradient-to-br from-yellow-300 to-orange-500 rounded-full shadow-lg mb-8 p-4">
-      <Trophy className="w-24 h-24 sm:w-32 sm:h-32 text-white drop-shadow-md" />
+    {/* Enhanced Rank Icon/Display */}
+    <div className="w-48 h-48 sm:w-56 sm:h-56 flex items-center justify-center bg-gradient-to-br from-yellow-400 to-orange-600 rounded-full shadow-xl mb-8 p-4 border-4 border-yellow-200">
+      <Trophy className="w-32 h-32 sm:w-40 sm:h-40 text-white drop-shadow-md" />
     </div>
-    <p className="text-xl sm:text-2xl font-semibold text-gray-700 mb-6">
+    <p className="text-xl sm:text-2xl font-semibold text-gray-700 mb-4">
       Your Current Rank:
     </p>
-    <p className="text-4xl sm:text-5xl font-extrabold text-purple-700 uppercase mb-8">
+    <p className="text-4xl sm:text-5xl font-extrabold text-purple-700 uppercase mb-8 tracking-wider text-shadow-md">
       {rank}
     </p>
     <Dialog>
       <DialogTrigger asChild>
-        <Button className="w-full max-w-xs py-3 text-lg font-semibold bg-green-500 hover:bg-green-600 text-white rounded-lg">
-          CLAIM
+        <Button className="w-full max-w-xs py-3 text-lg font-semibold bg-green-600 hover:bg-green-700 text-white rounded-xl shadow-md transition-all duration-200 hover:scale-105">
+          CLAIM NEXT RANK
         </Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="rounded-lg shadow-xl">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold">
+          <DialogTitle className="text-2xl font-bold text-gray-800">
             Rank Information
           </DialogTitle>
         </DialogHeader>
-        <p className="text-gray-700">
+        <p className="text-gray-700 text-base">
           Congratulations! You are currently a **{rank}** rank student!
         </p>
-        <p className="text-gray-700">
-          Keep earning points to achieve higher ranks and unlock exclusive
-          rewards.
+        <p className="text-gray-700 text-base">
+          Keep earning points by completing tasks and checking in daily to
+          achieve higher ranks and unlock exclusive rewards.
         </p>
+        <div className="mt-4 p-3 bg-blue-50 rounded-md text-sm text-blue-800">
+          Next Rank: Gold (Requires 500 Points)
+        </div>
       </DialogContent>
     </Dialog>
   </div>
@@ -176,28 +302,20 @@ const RewardsSection = ({
 }) => (
   <div className="p-4 sm:p-6 md:p-8">
     <h2 className="text-2xl sm:text-3xl font-bold mb-6 text-gray-800">
-      Rewards
+      Available Rewards
     </h2>
-    <p className="mb-6 text-xl font-semibold text-blue-600">
-      Your Current Points: {totalPoints}
+    <p className="mb-6 text-xl font-semibold text-blue-700 flex items-center">
+      <Coins className="w-6 h-6 mr-2 text-yellow-500" /> Your Current Points:{" "}
+      {totalPoints}
     </p>
     <div className="space-y-4">
       {rewards.map((reward) => (
         <Card
           key={reward.id}
-          className="flex items-center justify-between p-4 shadow-sm rounded-lg"
+          className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 shadow-sm rounded-lg border border-gray-100 transition-all duration-200 hover:shadow-md"
         >
-          <label
-            htmlFor={`reward-${reward.id}`}
-            className="flex items-center space-x-3 cursor-pointer flex-grow"
-          >
-            <Checkbox
-              id={`reward-${reward.id}`}
-              checked={reward.redeemed}
-              disabled={reward.redeemed || totalPoints < reward.pointsRequired}
-              onCheckedChange={() => onRedeemReward(reward.id)}
-              className="w-5 h-5"
-            />
+          <div className="flex items-center space-x-3 mb-2 sm:mb-0">
+            <Gift className="w-7 h-7 text-red-500" />
             <span
               className={`text-base sm:text-lg font-medium ${
                 reward.redeemed ? "line-through text-gray-400" : "text-gray-700"
@@ -205,10 +323,27 @@ const RewardsSection = ({
             >
               {reward.name}
             </span>
-          </label>
-          <span className="text-sm sm:text-base text-red-600 font-semibold">
-            {reward.pointsRequired} pts
-          </span>
+          </div>
+          <div className="flex items-center space-x-3 w-full sm:w-auto justify-between sm:justify-end">
+            <span className="text-sm sm:text-base text-red-600 font-semibold flex items-center">
+              <DollarSign className="w-4 h-4 mr-1" />
+              {reward.pointsRequired} Pts
+            </span>
+            {reward.redeemed ? (
+              <span className="text-green-600 font-semibold text-sm sm:text-base ml-4">
+                Redeemed!
+              </span>
+            ) : (
+              <Button
+                size="sm"
+                onClick={() => onRedeemReward(reward.id)}
+                disabled={totalPoints < reward.pointsRequired}
+                className="ml-4 bg-purple-600 hover:bg-purple-700 text-white rounded-md transition-all duration-200"
+              >
+                Redeem
+              </Button>
+            )}
+          </div>
         </Card>
       ))}
     </div>
@@ -223,21 +358,79 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState<ActiveTab>("home");
   const [userData, setUserData] = useState(mockUserData);
 
-  const handleToggleTask = (id: string) => {
+  const handleToggleTask = (id: string, type: "daily-check-in" | "regular") => {
     setUserData((prevData) => {
-      const updatedTasks = prevData.tasks.map((task) =>
-        task.id === id ? { ...task, completed: !task.completed } : task
-      );
-      // Simulate earning points for completing a task
-      const completedTask = updatedTasks.find(
+      const updatedTasks = prevData.tasks.map((task) => {
+        if (task.id === id) {
+          if (task.type === "daily-check-in") {
+            if (!task.completed) {
+              // Only allow checking in if not already completed
+              return { ...task, completed: true };
+            }
+          } else if (task.type === "regular") {
+            // For regular tasks, "toggle" means submitting if not submitted
+            if (!task.status) {
+              // Simulate submission (set to pending)
+              return { ...task, status: "pending" };
+            }
+          }
+        }
+        return task;
+      });
+
+      let newTotalPoints = prevData.totalPoints;
+      // Calculate points gain for completed daily check-in
+      const dailyCheckInCompleted = updatedTasks.find(
         (t) =>
           t.id === id &&
-          t.completed !== prevData.tasks.find((ot) => ot.id === id)?.completed
+          t.type === "daily-check-in" &&
+          t.completed &&
+          !prevData.tasks.find((ot) => ot.id === id)?.completed
       );
-      const newTotalPoints =
-        completedTask && completedTask.completed
-          ? prevData.totalPoints + completedTask.points
-          : prevData.totalPoints;
+      if (dailyCheckInCompleted) {
+        newTotalPoints += dailyCheckInCompleted.points;
+      }
+
+      // Simulate admin approval for regular tasks after a delay
+      // This is for demo purposes; in real app, backend would handle approval
+      if (type === "regular") {
+        setTimeout(() => {
+          setUserData((currentData) => {
+            const updatedTasksAfterApproval = currentData.tasks.map((task) => {
+              if (task.id === id && task.status === "pending") {
+                // Randomly approve or reject for demo
+                const isApproved = Math.random() > 0.3; // 70% chance to approve
+                let pointsToAdd = 0;
+                if (isApproved) {
+                  pointsToAdd = task.points;
+                }
+                return {
+                  ...task,
+                  status: isApproved ? "approved" : "rejected",
+                };
+              }
+              return task;
+            });
+
+            // Calculate points after approval
+            const taskJustApproved = updatedTasksAfterApproval.find(
+              (t) =>
+                t.id === id &&
+                t.status === "approved" &&
+                prevData.tasks.find((ot) => ot.id === id)?.status !== "approved"
+            );
+            if (taskJustApproved) {
+              newTotalPoints += taskJustApproved.points; // Add points only if it was just approved
+            }
+
+            return {
+              ...currentData,
+              tasks: updatedTasksAfterApproval,
+              totalPoints: newTotalPoints, // Ensure points are updated after async approval
+            };
+          });
+        }, 2000); // Simulate 2-second approval time
+      }
 
       return {
         ...prevData,
@@ -269,8 +462,6 @@ export default function Home() {
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-gray-50">
-      {" "}
-      {/* Use flex-row for desktop layout */}
       {/* Basic Sidebar for Larger Screens (Desktop/Tablet) */}
       <nav className="fixed left-0 top-0 h-full w-20 bg-white border-r shadow-lg hidden md:flex flex-col items-center py-8 z-10">
         {/* Settings icon at the very top of sidebar on desktop */}
@@ -324,10 +515,9 @@ export default function Home() {
           <span className="text-xs">REWARDS</span>
         </Button>
       </nav>
-      {/* Main Content Area - This will only render once */}
+
+      {/* Main Content Area */}
       <main className="flex-grow pb-16 md:pb-0 md:ml-20">
-        {" "}
-        {/* Add margin-left for sidebar on md+ screens */}
         {activeTab === "home" && <HomeSection userData={userData} />}
         {activeTab === "tasks" && (
           <TasksSection
@@ -344,10 +534,9 @@ export default function Home() {
           />
         )}
       </main>
+
       {/* Bottom Navigation (Mobile Only) */}
       <nav className="fixed bottom-0 left-0 right-0 z-10 flex justify-around items-center p-2 border-t bg-white shadow-lg md:hidden">
-        {" "}
-        {/* Hidden on medium+ screens */}
         <Button
           variant="ghost"
           onClick={() => setActiveTab("home")}
