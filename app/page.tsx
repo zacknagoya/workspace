@@ -34,6 +34,64 @@ import {
 import { mockUserData, Task, Reward } from "@/lib/data";
 
 // --- Components for different sections ---
+// --- New Redeemed Rewards Section Component ---
+const RedeemedRewardsSection = ({ rewards }: { rewards: Reward[] }) => {
+  const redeemedRewards = rewards.filter((reward) => reward.redeemed);
+
+  return (
+    <div className="py-4 sm:py-6 md:py-8">
+      {" "}
+      {/* Outer padding for the entire section */}
+      {/* Section Header - Styled to match other CardHeaders */}
+      <Card className="mb-6 shadow-lg rounded-xl border border-gray-100 transition-transform duration-200 hover:scale-[1.01]">
+        <CardHeader className="flex flex-row items-center justify-between pb-3 space-y-0">
+          <CardTitle className="text-xl sm:text-2xl font-semibold text-gray-800 flex items-center">
+            <Award className="w-6 h-6 mr-2 text-yellow-500" />{" "}
+            {/* Icon for the header */}
+            Redeemed Rewards
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {redeemedRewards.length === 0 ? (
+            // Empty State Card - Nicer and more aligned with existing designs
+            <div className="flex flex-col items-center justify-center p-6 text-center bg-gray-50 rounded-lg border border-gray-100">
+              <Gift className="w-12 h-12 text-gray-400 mb-4" />{" "}
+              {/* Icon for empty state */}
+              <p className="text-gray-600 text-lg font-medium mb-2">
+                No rewards redeemed yet.
+              </p>
+              <p className="text-sm text-gray-500">
+                Keep completing tasks to earn points and claim your first
+                reward!
+              </p>
+            </div>
+          ) : (
+            // Redeemed Rewards List
+            <div className="space-y-4">
+              {redeemedRewards.map((reward) => (
+                <Card
+                  key={reward.id}
+                  className="flex items-center justify-between p-4 shadow-sm rounded-lg border border-green-300 bg-green-50 transition-transform duration-200 hover:scale-[1.005] hover:shadow-md"
+                >
+                  <div className="flex items-center space-x-3">
+                    <Gift className="w-7 h-7 text-green-600" />{" "}
+                    {/* Icon for each redeemed reward */}
+                    <span className="text-base sm:text-lg font-semibold text-gray-800">
+                      {reward.name}
+                    </span>
+                  </div>
+                  <span className="text-sm sm:text-base text-green-700 font-bold flex items-center">
+                    <CheckCircle className="w-4 h-4 mr-1" /> Redeemed!
+                  </span>
+                </Card>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
 
 const HomeSection = ({ userData }: { userData: typeof mockUserData }) => (
   <div className="p-4 sm:p-6 md:p-8">
@@ -106,6 +164,9 @@ const HomeSection = ({ userData }: { userData: typeof mockUserData }) => (
         </div>
       </CardContent>
     </Card>
+
+    {/* New Redeemed Rewards Section */}
+    <RedeemedRewardsSection rewards={userData.rewards} />
   </div>
 );
 
